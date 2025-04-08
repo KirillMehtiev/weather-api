@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using WebAPI.Entities;
 using WebAPI.Models;
+using WebAPI.Services;
 
 namespace WebAPI.Controllers;
 
@@ -8,41 +10,73 @@ namespace WebAPI.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly ILogger<UsersController> _logger;
+    private readonly IUserService _userService;
 
-    public UsersController(ILogger<UsersController> logger)
+    public UsersController(ILogger<UsersController> logger, IUserService userService)
     {
         _logger = logger;
+        _userService = userService;
     }
 
     [HttpPost("create")]
-    public async Task<ActionResult<string>> Create([FromBody] CreateUserRequest model)
+    public async Task<ActionResult<User>> Create([FromBody] CreateUserRequest model)
     {
-        return Ok("created");
+        //todo: if user with the passed email exists return validation error
+        
+        var user = await _userService.CreateAsync(model);
+        // todo: add response model and mapping from entity to model
+        return Ok(user);
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<string>> Login([FromBody] LoginUserRequest model)
+    public async Task<ActionResult<User>> Login([FromBody] LoginUserRequest model)
     {
-        return Ok("success");
+        var user = await _userService.GetAsync(model.Email);
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+        
+        return Ok(user);
     }
 
     [HttpPost("{id:guid}/subscriptions")]
-    public async Task<ActionResult<string>> CreateSubscription(Guid id, [FromBody] CreateSubscriptionRequest model)
+    public async Task<ActionResult<Subscription>> CreateSubscription(Guid id, [FromBody] CreateSubscriptionRequest model)
     {
-        return Ok("created");
+        var user = await _userService.GetAsync(id);
+        if (user == null)
+        {
+            return BadRequest("User with specified id not found");
+        }
+        
+        // todo: compare user.email with model.email should be same
+
+        var sub = await _userService.CreateUserSubscription(user.Id, model);
+        
+        return Ok(sub);
     }
     
     [HttpGet("{id:guid}/subscriptions")]
-    public async Task<ActionResult<string>> GetSubscriptions(Guid id)
+    public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions(Guid id)
     {
-        return Ok("list");
+        var user = await _userService.GetAsync(id);
+        if (user == null)
+        {
+            return BadRequest("User with specified id not found");
+        }
+
+        var subs = await _userService.GetUserSubscriptions(id);
+        
+        return Ok(subs);
     }
     
     [HttpDelete("{id:guid}/subscriptions/{subId}")]
-    public async Task<ActionResult<string>> GetSubscriptions(Guid id, Guid subId)
+    public async Task<ActionResult> DeleteUserSubscription(Guid id, Guid subId)
     {
-        return Ok("list");
+        _logger.LogInformation("Deleting subscription {subId} for user {id}", subId, id);
+        
+        await _userService.DeleteUserSubscriptions(id, subId);
+        
+        return NoContent();
     }
-    
-
 }

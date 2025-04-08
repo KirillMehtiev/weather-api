@@ -1,3 +1,6 @@
+using WebAPI.Repositories;
+using WebAPI.Services;
+
 namespace WebAPI;
 
 public class Program
@@ -10,6 +13,9 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
+        builder.Services.AddSingleton<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IUserService, UserService>();
        
         var app = builder.Build();
 
