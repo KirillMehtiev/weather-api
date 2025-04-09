@@ -41,7 +41,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id:guid}/subscriptions")]
-    public async Task<ActionResult<Subscription>> CreateSubscription(Guid id, [FromBody] CreateSubscriptionRequest model)
+    public async Task<ActionResult<SubscriptionResponse>> CreateSubscription(Guid id, [FromBody] CreateSubscriptionRequest model)
     {
         var user = await _userService.GetAsync(id);
         if (user == null)
@@ -51,13 +51,17 @@ public class UsersController : ControllerBase
         
         // todo: compare user.email with model.email should be same
 
-        var sub = await _userService.CreateUserSubscription(user.Id, model);
+        var response = await _userService.CreateUserSubscription(user.Id, model);
+        if (response == null)
+        {
+            return NotFound("Not found wheather for specified location.");
+        }
         
-        return Ok(sub);
+        return Ok(response);
     }
     
     [HttpGet("{id:guid}/subscriptions")]
-    public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions(Guid id)
+    public async Task<ActionResult<IEnumerable<SubscriptionResponse>>> GetSubscriptions(Guid id)
     {
         var user = await _userService.GetAsync(id);
         if (user == null)
@@ -70,7 +74,7 @@ public class UsersController : ControllerBase
         return Ok(subs);
     }
     
-    [HttpDelete("{id:guid}/subscriptions/{subId}")]
+    [HttpDelete("{id:guid}/subscriptions/{subId:guid}")]
     public async Task<ActionResult> DeleteUserSubscription(Guid id, Guid subId)
     {
         _logger.LogInformation("Deleting subscription {subId} for user {id}", subId, id);

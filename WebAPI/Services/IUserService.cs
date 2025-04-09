@@ -9,7 +9,7 @@ public interface IUserService
     Task<User> GetAsync(string email);
     Task<User> CreateAsync(CreateUserRequest createUserRequest);
     
-    Task<IEnumerable<Subscription>> GetUserSubscriptions(Guid userId);
-    Task<Subscription> CreateUserSubscription(Guid userId, CreateSubscriptionRequest subscription);
+    Task<IEnumerable<SubscriptionResponse>> GetUserSubscriptions(Guid userId);
+    Task<SubscriptionResponse> CreateUserSubscription(Guid userId, CreateSubscriptionRequest subscription);
     Task DeleteUserSubscriptions(Guid userId, Guid subId);
 }

@@ -1,5 +1,7 @@
 using WebAPI.Entities;
 using WebAPI.Models;
+using WebAPI.Providers;
+using WebAPI.Providers.Models;
 using WebAPI.Repositories;
 
 namespace WebAPI.Services;
@@ -7,10 +9,12 @@ namespace WebAPI.Services;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IWeatherProvider _weatherProvider;
 
-    public UserService(IUserRepository userRepository)
+    public UserService(IUserRepository userRepository, IWeatherProvider weatherProvider)
     {
         _userRepository = userRepository;
+        _weatherProvider = weatherProvider;
     }
     
     public Task<User> GetAsync(Guid id)
@@ -39,24 +43,58 @@ public class UserService : IUserService
         return _userRepository.CreateAsync(user);
     }
 
-    public Task<IEnumerable<Subscription>> GetUserSubscriptions(Guid userId)
+    public async Task<IEnumerable<SubscriptionResponse>> GetUserSubscriptions(Guid userId)
     {
-        var subs = _userRepository.GetUserSubscriptions(userId);
+        var subs = await _userRepository.GetUserSubscriptions(userId);
+        var tasks = new Dictionary<Subscription, Task<WeatherResponse>>();
+        var existingSubscriptions = subs.ToList();
+        var response = new List<SubscriptionResponse>();
 
-        return subs;
+        foreach (var sub in existingSubscriptions)
+        {
+            tasks[sub] = _weatherProvider.GetWeatherDataAsync(sub.City, sub.Country, sub.ZipCode);
+        }
+
+        await Task.WhenAll(tasks.Values);
+
+        foreach (var task in tasks)
+        {
+            var value = await task.Value;
+            response.Add(new SubscriptionResponse(task.Key, value));
+        }
+        
+        return response;
     }
     
-    public Task<Subscription> CreateUserSubscription(Guid userId, CreateSubscriptionRequest subscription)
+    public async Task<SubscriptionResponse> CreateUserSubscription(Guid userId, CreateSubscriptionRequest request)
     {
-        var sub = new Subscription
+        var country = ISO3166.Country.List.FirstOrDefault(c => StringComparer.OrdinalIgnoreCase.Equals(c.Name, request.Country));
+        if (country == null)
+        {
+            return null;
+        }
+
+        var weatherData = await _weatherProvider.GetWeatherDataAsync(request.City, country.TwoLetterCode, request.ZipCode);
+        if (weatherData == null)
+        {
+            return null;
+        }
+        
+        var subscription = new Subscription
         {
             Id = Guid.NewGuid(),
-            Country = subscription.Country,
-            City = subscription.City,
-            ZipCode = subscription.ZipCode
+            Country = request.Country,
+            City = request.City,
+            ZipCode = request.ZipCode,
+            Latitude = weatherData.Coord?.Lat, // might be need for future adjustments
+            Longitude = weatherData.Coord?.Lon
         };
+
+        await _userRepository.CreateUserSubscription(userId, subscription);
+
+        var response = new SubscriptionResponse(subscription, weatherData);
         
-        return _userRepository.CreateUserSubscription(userId, sub);
+        return response;
     }
 
     public Task DeleteUserSubscriptions(Guid userId, Guid subId)

@@ -4,8 +4,7 @@ namespace WebAPI.Models;
 
 public class CreateSubscriptionRequest
 {
-    [Required]
-    [EmailAddress]
+    [Required, EmailAddress]
     public string Email { get; set; }
 
     [Required]
