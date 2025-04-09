@@ -12,21 +12,17 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        var weatherConfig = builder.Configuration.GetSection("OpenWeatherMap");
         
         // Add options
-        builder.Services.Configure<OpenWeatherMapOptions>(
-            builder.Configuration.GetSection("OpenWeatherMap"));
+        builder.Services.Configure<OpenWeatherMapOptions>(weatherConfig);
 
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddRefitClient<IOpenWeatherMapApi>()
-            .ConfigureHttpClient(client =>
-            {
-                client.BaseAddress = 
-                    new Uri(builder.Configuration.GetSection("OpenWeatherMap:BaseUrl").Value);
-            });
+            .ConfigureHttpClient(client => client.BaseAddress = new Uri(weatherConfig["BaseUrl"]));
 
         builder.Services.AddSingleton<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IUserService, UserService>();

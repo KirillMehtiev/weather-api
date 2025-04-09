@@ -17,21 +17,33 @@ public class UserService : IUserService
         _weatherProvider = weatherProvider;
     }
     
-    public Task<User> GetAsync(Guid id)
+    public async Task<UserResponse> GetAsync(Guid id)
     {
-        var user = _userRepository.GetAsync(id);
-
-        return user;
+        var user = await _userRepository.GetAsync(id);
+        if (user == null)
+        {
+            return null;
+        }
+        
+        var userResponse = new UserResponse(user);
+        
+        return userResponse;
     }
 
-    public Task<User> GetAsync(string email)
+    public async Task<UserResponse> GetAsync(string email)
     {
-        var user = _userRepository.GetAsync(email);
+        var user = await _userRepository.GetAsync(email);
+        if (user == null)
+        {
+            return null;
+        }
+        
+        var userResponse = new UserResponse(user);
 
-        return user;
+        return userResponse;
     }
 
-    public Task<User> CreateAsync(CreateUserRequest createUserRequest)
+    public async Task<UserResponse> CreateAsync(CreateUserRequest createUserRequest)
     {
         var user = new User
         {
@@ -39,8 +51,12 @@ public class UserService : IUserService
             Email = createUserRequest.Email,
             Subscriptions = new List<Subscription>()
         };
+
+        await _userRepository.CreateAsync(user);
+
+        var userResponse = new UserResponse(user);
         
-        return _userRepository.CreateAsync(user);
+        return userResponse;
     }
 
     public async Task<IEnumerable<SubscriptionResponse>> GetUserSubscriptions(Guid userId)

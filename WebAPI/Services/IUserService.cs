@@ -5,9 +5,9 @@ namespace WebAPI.Services;
 
 public interface IUserService
 {
-    Task<User> GetAsync(Guid id);
-    Task<User> GetAsync(string email);
-    Task<User> CreateAsync(CreateUserRequest createUserRequest);
+    Task<UserResponse> GetAsync(Guid id);
+    Task<UserResponse> GetAsync(string email);
+    Task<UserResponse> CreateAsync(CreateUserRequest createUserRequest);
     
     Task<IEnumerable<SubscriptionResponse>> GetUserSubscriptions(Guid userId);
     Task<SubscriptionResponse> CreateUserSubscription(Guid userId, CreateSubscriptionRequest subscription);

@@ -1,14 +1,15 @@
+using System.Collections.Concurrent;
 using WebAPI.Entities;
 
 namespace WebAPI.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly List<User> _users;
+    private readonly ConcurrentBag<User> _users;
     
     public UserRepository()
     {
-        _users = new List<User>();
+        _users = new ConcurrentBag<User>();
     }
 
     public Task<User> GetAsync(Guid id)
@@ -20,8 +21,7 @@ public class UserRepository : IUserRepository
 
     public Task<User> GetAsync(string email)
     {
-        // todo: think about different casing
-        var user = _users.FirstOrDefault(u => u.Email == email);
+        var user = _users.FirstOrDefault(u => StringComparer.OrdinalIgnoreCase.Equals(u.Email, email));
 
         return Task.FromResult(user);
     }
@@ -36,7 +36,7 @@ public class UserRepository : IUserRepository
     public Task<IEnumerable<Subscription>> GetUserSubscriptions(Guid userId)
     {
         var user = _users.FirstOrDefault(u => u.Id == userId);
-        var subs = user?.Subscriptions?.Take(100); // todo: pagination?
+        var subs = user?.Subscriptions?.Take(100);
         
         return Task.FromResult(subs);
     }

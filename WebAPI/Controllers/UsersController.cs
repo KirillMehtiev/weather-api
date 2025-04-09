@@ -19,17 +19,21 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("create")]
-    public async Task<ActionResult<User>> Create([FromBody] CreateUserRequest model)
+    public async Task<ActionResult<UserResponse>> Create([FromBody] CreateUserRequest model)
     {
-        //todo: if user with the passed email exists return validation error
+        var user = await _userService.GetAsync(model.Email);
+        if (user != null)
+        {
+            return BadRequest("User already exists.");
+        }
         
-        var user = await _userService.CreateAsync(model);
-        // todo: add response model and mapping from entity to model
+        user = await _userService.CreateAsync(model);
+
         return Ok(user);
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<User>> Login([FromBody] LoginUserRequest model)
+    public async Task<ActionResult<UserResponse>> Login([FromBody] LoginUserRequest model)
     {
         var user = await _userService.GetAsync(model.Email);
         if (user == null)
@@ -46,15 +50,18 @@ public class UsersController : ControllerBase
         var user = await _userService.GetAsync(id);
         if (user == null)
         {
-            return BadRequest("User with specified id not found");
+            return BadRequest("User with specified id not found.");
         }
-        
-        // todo: compare user.email with model.email should be same
+
+        if (!StringComparer.OrdinalIgnoreCase.Equals(user.Email, model.Email))
+        {
+            return BadRequest("Email mismatch.");
+        }
 
         var response = await _userService.CreateUserSubscription(user.Id, model);
         if (response == null)
         {
-            return NotFound("Not found wheather for specified location.");
+            return NotFound("Not found weather for specified location.");
         }
         
         return Ok(response);
