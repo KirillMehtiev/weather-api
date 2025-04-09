@@ -1,3 +1,4 @@
+using System.Reflection;
 using Refit;
 using WebAPI.Middlewares;
 using WebAPI.Providers;
@@ -23,7 +24,11 @@ public class Program
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+        });
         builder.Services.AddMemoryCache();
         builder.Services.AddRefitClient<IOpenWeatherMapApi>()
             .ConfigureHttpClient(client => client.BaseAddress = new Uri(weatherConfig["BaseUrl"]));
