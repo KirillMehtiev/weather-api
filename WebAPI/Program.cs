@@ -17,7 +17,7 @@ public class Program
         
         // Add options
         builder.Services.Configure<OpenWeatherMapOptions>(weatherConfig);
-        builder.Services.Configure<ApplicationOptions>(weatherConfig);
+        builder.Services.Configure<ApplicationSettingsOptions>(appSettings);
 
         // Add services to the container.
         builder.Services.AddControllers();

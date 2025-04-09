@@ -1,8 +1,11 @@
+using Microsoft.Extensions.Options;
 using WebAPI.Entities;
+using WebAPI.Exceptions;
 using WebAPI.Models;
 using WebAPI.Providers;
 using WebAPI.Providers.Models;
 using WebAPI.Repositories;
+using WebAPI.SettingOptions;
 
 namespace WebAPI.Services;
 
@@ -10,11 +13,14 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IWeatherProvider _weatherProvider;
+    private readonly ApplicationSettingsOptions _settings;
 
-    public UserService(IUserRepository userRepository, IWeatherProvider weatherProvider)
+    public UserService(IUserRepository userRepository,
+        IWeatherProvider weatherProvider, IOptions<ApplicationSettingsOptions> options)
     {
         _userRepository = userRepository;
         _weatherProvider = weatherProvider;
+        _settings = options.Value;
     }
     
     public async Task<UserResponse> GetAsync(Guid id)
@@ -88,6 +94,13 @@ public class UserService : IUserService
         if (country == null)
         {
             return null;
+        }
+
+        var subs = await _userRepository.GetUserSubscriptions(userId);
+        var subscriptions = subs.ToList();
+        if (subscriptions.Any() && subscriptions.Count >= _settings.MaxSubscriptionsPerUser)
+        {
+            throw new MaxSubscriptionsLimitException();
         }
 
         var weatherData = await _weatherProvider.GetWeatherDataAsync(request.City, country.TwoLetterCode, request.ZipCode);
