@@ -1,4 +1,5 @@
 using Refit;
+using WebAPI.Middlewares;
 using WebAPI.Providers;
 using WebAPI.Providers.Clients;
 using WebAPI.Repositories;
@@ -40,6 +41,7 @@ public class Program
             app.UseSwaggerUI();
         }
         
+        app.UseGlobalExceptionHandler();
         app.UseHttpsRedirection();
         // app.UseAuthorization();
         app.MapControllers();
