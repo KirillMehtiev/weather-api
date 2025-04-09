@@ -13,14 +13,17 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var weatherConfig = builder.Configuration.GetSection("OpenWeatherMap");
+        var appSettings = builder.Configuration.GetSection("ApplicationSettings");
         
         // Add options
         builder.Services.Configure<OpenWeatherMapOptions>(weatherConfig);
+        builder.Services.Configure<ApplicationOptions>(weatherConfig);
 
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddMemoryCache();
         builder.Services.AddRefitClient<IOpenWeatherMapApi>()
             .ConfigureHttpClient(client => client.BaseAddress = new Uri(weatherConfig["BaseUrl"]));
 
@@ -33,11 +36,9 @@ public class Program
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
-        
-        app.UseSwagger();
-        app.UseSwaggerUI();
         
         app.UseHttpsRedirection();
         // app.UseAuthorization();
