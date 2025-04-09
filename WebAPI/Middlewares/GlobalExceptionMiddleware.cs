@@ -36,7 +36,8 @@ public class GlobalExceptionMiddleware
         var (statusCode, message) = exception switch
         {
             MaxSubscriptionsLimitException => (StatusCodes.Status409Conflict, exception.Message),
-            _ => (StatusCodes.Status409Conflict, "Sorry we have a problem. Somebody will be fired :)")
+            ThirdPartyException => (StatusCodes.Status503ServiceUnavailable, exception.Message),
+            _ => (StatusCodes.Status500InternalServerError, "Sorry we have a problem. Somebody will be fired :)")
         };
         
         context.Response.ContentType = "application/json";
